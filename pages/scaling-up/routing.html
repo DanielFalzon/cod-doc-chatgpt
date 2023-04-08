@@ -1,0 +1,64 @@
+Routing ​Client-Side vs. Server-Side Routing ​Routing on the server side means the server sending a response based on the URL path that the user is visiting. When we click on a link in a traditional server-rendered web app, the browser receives an HTML response from the server and reloads the entire page with the new HTML.In a Single-Page Application (SPA), however, the client-side JavaScript can intercept the navigation, dynamically fetch new data, and update the current page without full page reloads. This typically results in a more snappy user experience, especially for use cases that are more like actual "applications", where the user is expected to perform many interactions over a long period of time.In such SPAs, the "routing" is done on the client side, in the browser. A client-side router is responsible for managing the application's rendered view using browser APIs such as History API or the hashchange event.Official Router ​ Watch a Free Video Course on Vue School Vue is well-suited for building SPAs. For most SPAs, it's recommended to use the officially-supported Vue Router library. For more details, see Vue Router's documentation.Simple Routing from Scratch ​If you only need very simple routing and do not wish to involve a full-featured router library, you can do so with Dynamic Components and update the current component state by listening to browser hashchange events or using the History API.Here's a bare-bone example:vue&lt;script setup&gt;
+import { ref, computed } from 'vue'
+import Home from './Home.vue'
+import About from './About.vue'
+import NotFound from './NotFound.vue'
+
+const routes = {
+  '/': Home,
+  '/about': About
+}
+
+const currentPath = ref(window.location.hash)
+
+window.addEventListener('hashchange', () =&gt; {
+  currentPath.value = window.location.hash
+})
+
+const currentView = computed(() =&gt; {
+  return routes[currentPath.value.slice(1) || '/'] || NotFound
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;a href="#/"&gt;Home&lt;/a&gt; |
+  &lt;a href="#/about"&gt;About&lt;/a&gt; |
+  &lt;a href="#/non-existent-path"&gt;Broken Link&lt;/a&gt;
+  &lt;component :is="currentView" /&gt;
+&lt;/template&gt;
+Try it in the Playgroundvue&lt;script&gt;
+import Home from './Home.vue'
+import About from './About.vue'
+import NotFound from './NotFound.vue'
+
+const routes = {
+  '/': Home,
+  '/about': About
+}
+
+export default {
+  data() {
+    return {
+      currentPath: window.location.hash
+    }
+  },
+  computed: {
+    currentView() {
+      return routes[this.currentPath.slice(1) || '/'] || NotFound
+    }
+  },
+  mounted() {
+    window.addEventListener('hashchange', () =&gt; {
+		  this.currentPath = window.location.hash
+		})
+  }
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;a href="#/"&gt;Home&lt;/a&gt; |
+  &lt;a href="#/about"&gt;About&lt;/a&gt; |
+  &lt;a href="#/non-existent-path"&gt;Broken Link&lt;/a&gt;
+  &lt;component :is="currentView" /&gt;
+&lt;/template&gt;
+Try it in the PlaygroundEdit this page on GitHub

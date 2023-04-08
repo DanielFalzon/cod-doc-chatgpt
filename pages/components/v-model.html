@@ -1,0 +1,251 @@
+Component v-model ​v-model can be used on a component to implement a two-way binding.First let's revisit how v-model is used on a native element:template&lt;input v-model="searchText" /&gt;
+Under the hood, the template compiler expands v-model to the more verbose equivalent for us. So the above code does the same as the following:template&lt;input
+  :value="searchText"
+  @input="searchText = $event.target.value"
+/&gt;
+When used on a component, v-model instead expands to this:template&lt;CustomInput
+  :modelValue="searchText"
+  @update:modelValue="newValue =&gt; searchText = newValue"
+/&gt;
+For this to actually work though, the &lt;CustomInput&gt; component must do two things:Bind the value attribute of a native &lt;input&gt; element to the modelValue propWhen a native input event is triggered, emit an update:modelValue custom event with the new valueHere's that in action:vue&lt;!-- CustomInput.vue --&gt;
+&lt;script&gt;
+export default {
+  props: ['modelValue'],
+  emits: ['update:modelValue']
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    :value="modelValue"
+    @input="$emit('update:modelValue', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+vue&lt;!-- CustomInput.vue --&gt;
+&lt;script setup&gt;
+defineProps(['modelValue'])
+defineEmits(['update:modelValue'])
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    :value="modelValue"
+    @input="$emit('update:modelValue', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Now v-model should work perfectly with this component:template&lt;CustomInput v-model="searchText" /&gt;
+Try it in the PlaygroundTry it in the PlaygroundAnother way of implementing v-model within this component is to use a writable computed property with both a getter and a setter. The get method should return the modelValue property and the set method should emit the corresponding event:vue&lt;!-- CustomInput.vue --&gt;
+&lt;script&gt;
+export default {
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  computed: {
+    value: {
+      get() {
+        return this.modelValue
+      },
+      set(value) {
+        this.$emit('update:modelValue', value)
+      }
+    }
+  }
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input v-model="value" /&gt;
+&lt;/template&gt;
+vue&lt;!-- CustomInput.vue --&gt;
+&lt;script setup&gt;
+import { computed } from 'vue'
+
+const props = defineProps(['modelValue'])
+const emit = defineEmits(['update:modelValue'])
+
+const value = computed({
+  get() {
+    return props.modelValue
+  },
+  set(value) {
+    emit('update:modelValue', value)
+  }
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input v-model="value" /&gt;
+&lt;/template&gt;
+v-model arguments ​By default, v-model on a component uses modelValue as the prop and update:modelValue as the event. We can modify these names passing an argument to v-model:template&lt;MyComponent v-model:title="bookTitle" /&gt;
+In this case, the child component should expect a title prop and emit an update:title event to update the parent value:vue&lt;!-- MyComponent.vue --&gt;
+&lt;script setup&gt;
+defineProps(['title'])
+defineEmits(['update:title'])
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="title"
+    @input="$emit('update:title', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Try it in the Playgroundvue&lt;!-- MyComponent.vue --&gt;
+&lt;script&gt;
+export default {
+  props: ['title'],
+  emits: ['update:title']
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="title"
+    @input="$emit('update:title', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Try it in the PlaygroundMultiple v-model bindings ​By leveraging the ability to target a particular prop and event as we learned before with v-model arguments, we can now create multiple v-model bindings on a single component instance.Each v-model will sync to a different prop, without the need for extra options in the component:template&lt;UserName
+  v-model:first-name="first"
+  v-model:last-name="last"
+/&gt;
+vue&lt;script setup&gt;
+defineProps({
+  firstName: String,
+  lastName: String
+})
+
+defineEmits(['update:firstName', 'update:lastName'])
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="firstName"
+    @input="$emit('update:firstName', $event.target.value)"
+  /&gt;
+  &lt;input
+    type="text"
+    :value="lastName"
+    @input="$emit('update:lastName', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Try it in the Playgroundvue&lt;script&gt;
+export default {
+  props: {
+    firstName: String,
+    lastName: String
+  },
+  emits: ['update:firstName', 'update:lastName']
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="firstName"
+    @input="$emit('update:firstName', $event.target.value)"
+  /&gt;
+  &lt;input
+    type="text"
+    :value="lastName"
+    @input="$emit('update:lastName', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Try it in the PlaygroundHandling v-model modifiers ​When we were learning about form input bindings, we saw that v-model has built-in modifiers - .trim, .number and .lazy. In some cases, you might also want the v-model on your custom input component to support custom modifiers.Let's create an example custom modifier, capitalize, that capitalizes the first letter of the string provided by the v-model binding:template&lt;MyComponent v-model.capitalize="myText" /&gt;
+Modifiers added to a component v-model will be provided to the component via the modelModifiers prop. In the below example, we have created a component that contains a modelModifiers prop that defaults to an empty object:vue&lt;script setup&gt;
+const props = defineProps({
+  modelValue: String,
+  modelModifiers: { default: () =&gt; ({}) }
+})
+
+defineEmits(['update:modelValue'])
+
+console.log(props.modelModifiers) // { capitalize: true }
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="modelValue"
+    @input="$emit('update:modelValue', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+vue&lt;script&gt;
+export default {
+  props: {
+    modelValue: String,
+    modelModifiers: {
+      default: () =&gt; ({})
+    }
+  },
+  emits: ['update:modelValue'],
+  created() {
+    console.log(this.modelModifiers) // { capitalize: true }
+  }
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input
+    type="text"
+    :value="modelValue"
+    @input="$emit('update:modelValue', $event.target.value)"
+  /&gt;
+&lt;/template&gt;
+Notice the component's modelModifiers prop contains capitalize and its value is true - due to it being set on the v-model binding v-model.capitalize="myText".Now that we have our prop set up, we can check the modelModifiers object keys and write a handler to change the emitted value. In the code below we will capitalize the string whenever the &lt;input /&gt; element fires an input event.vue&lt;script setup&gt;
+const props = defineProps({
+  modelValue: String,
+  modelModifiers: { default: () =&gt; ({}) }
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+function emitValue(e) {
+  let value = e.target.value
+  if (props.modelModifiers.capitalize) {
+    value = value.charAt(0).toUpperCase() + value.slice(1)
+  }
+  emit('update:modelValue', value)
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input type="text" :value="modelValue" @input="emitValue" /&gt;
+&lt;/template&gt;
+Try it in the Playgroundvue&lt;script&gt;
+export default {
+  props: {
+    modelValue: String,
+    modelModifiers: {
+      default: () =&gt; ({})
+    }
+  },
+  emits: ['update:modelValue'],
+  methods: {
+    emitValue(e) {
+      let value = e.target.value
+      if (this.modelModifiers.capitalize) {
+        value = value.charAt(0).toUpperCase() + value.slice(1)
+      }
+      this.$emit('update:modelValue', value)
+    }
+  }
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;input type="text" :value="modelValue" @input="emitValue" /&gt;
+&lt;/template&gt;
+Try it in the PlaygroundFor v-model bindings with both argument and modifiers, the generated prop name will be arg + "Modifiers". For example:template&lt;MyComponent v-model:title.capitalize="myText"&gt;
+The corresponding declarations should be:jsconst props = defineProps(['title', 'titleModifiers'])
+defineEmits(['update:title'])
+
+console.log(props.titleModifiers) // { capitalize: true }
+jsexport default {
+  props: ['title', 'titleModifiers'],
+  emits: ['update:title'],
+  created() {
+    console.log(this.titleModifiers) // { capitalize: true }
+  }
+}
+Edit this page on GitHub

@@ -1,0 +1,113 @@
+Component Events ​This page assumes you've already read the Components Basics. Read that first if you are new to components.Watch a free video lesson on Vue SchoolEmitting and Listening to Events ​A component can emit custom events directly in template expressions (e.g. in a v-on handler) using the built-in $emit method:template&lt;!-- MyComponent --&gt;
+&lt;button @click="$emit('someEvent')"&gt;click me&lt;/button&gt;
+The $emit() method is also available on the component instance as this.$emit():jsexport default {
+  methods: {
+    submit() {
+      this.$emit('someEvent')
+    }
+  }
+}
+The parent can then listen to it using v-on:template&lt;MyComponent @some-event="callback" /&gt;
+The .once modifier is also supported on component event listeners:template&lt;MyComponent @some-event.once="callback" /&gt;
+Like components and props, event names provide an automatic case transformation. Notice we emitted a camelCase event, but can listen for it using a kebab-cased listener in the parent. As with props casing, we recommend using kebab-cased event listeners in templates.TIPUnlike native DOM events, component emitted events do not bubble. You can only listen to the events emitted by a direct child component. If there is a need to communicate between sibling or deeply nested components, use an external event bus or a global state management solution.Event Arguments ​It's sometimes useful to emit a specific value with an event. For example, we may want the &lt;BlogPost&gt; component to be in charge of how much to enlarge the text by. In those cases, we can pass extra arguments to $emit to provide this value:template&lt;button @click="$emit('increaseBy', 1)"&gt;
+  Increase by 1
+&lt;/button&gt;
+Then, when we listen to the event in the parent, we can use an inline arrow function as the listener, which allows us to access the event argument:template&lt;MyButton @increase-by="(n) =&gt; count += n" /&gt;
+Or, if the event handler is a method:template&lt;MyButton @increase-by="increaseCount" /&gt;
+Then the value will be passed as the first parameter of that method:jsmethods: {
+  increaseCount(n) {
+    this.count += n
+  }
+}
+jsfunction increaseCount(n) {
+  count.value += n
+}
+TIPAll extra arguments passed to $emit() after the event name will be forwarded to the listener. For example, with $emit('foo', 1, 2, 3) the listener function will receive three arguments.Declaring Emitted Events ​A component can explicitly declare the events it will emit using the defineEmits() macroemits option:vue&lt;script setup&gt;
+defineEmits(['inFocus', 'submit'])
+&lt;/script&gt;
+The $emit method that we used in the &lt;template&gt; isn't accessible within the &lt;script setup&gt; section of a component, but defineEmits() returns an equivalent function that we can use instead:vue&lt;script setup&gt;
+const emit = defineEmits(['inFocus', 'submit'])
+
+function buttonClick() {
+  emit('submit')
+}
+&lt;/script&gt;
+The defineEmits() macro cannot be used inside a function, it must be placed directly within &lt;script setup&gt;, as in the example above.If you're using an explicit setup function instead of &lt;script setup&gt;, events should be declared using the emits option, and the emit function is exposed on the setup() context:jsexport default {
+  emits: ['inFocus', 'submit'],
+  setup(props, ctx) {
+    ctx.emit('submit')
+  }
+}
+As with other properties of the setup() context, emit can safely be destructured:jsexport default {
+  emits: ['inFocus', 'submit'],
+  setup(props, { emit }) {
+    emit('submit')
+  }
+}
+jsexport default {
+  emits: ['inFocus', 'submit']
+}
+The emits option also supports an object syntax, which allows us to perform runtime validation of the payload of the emitted events:vue&lt;script setup&gt;
+const emit = defineEmits({
+  submit(payload) {
+    // return `true` or `false` to indicate
+    // validation pass / fail
+  }
+})
+&lt;/script&gt;
+If you are using TypeScript with &lt;script setup&gt;, it's also possible to declare emitted events using pure type annotations:vue&lt;script setup lang="ts"&gt;
+const emit = defineEmits&lt;{
+  (e: 'change', id: number): void
+  (e: 'update', value: string): void
+}&gt;()
+&lt;/script&gt;
+More details: Typing Component Emits jsexport default {
+  emits: {
+    submit(payload) {
+      // return `true` or `false` to indicate
+      // validation pass / fail
+    }
+  }
+}
+See also: Typing Component Emits Although optional, it is recommended to define all emitted events in order to better document how a component should work. It also allows Vue to exclude known listeners from fallthrough attributes, avoiding edge cases caused by DOM events manually dispatched by 3rd party code.TIPIf a native event (e.g., click) is defined in the emits option, the listener will now only listen to component-emitted click events and no longer respond to native click events.Events Validation ​Similar to prop type validation, an emitted event can be validated if it is defined with the object syntax instead of the array syntax.To add validation, the event is assigned a function that receives the arguments passed to the this.$emitemit call and returns a boolean to indicate whether the event is valid or not.vue&lt;script setup&gt;
+const emit = defineEmits({
+  // No validation
+  click: null,
+
+  // Validate submit event
+  submit: ({ email, password }) =&gt; {
+    if (email &amp;&amp; password) {
+      return true
+    } else {
+      console.warn('Invalid submit event payload!')
+      return false
+    }
+  }
+})
+
+function submitForm(email, password) {
+  emit('submit', { email, password })
+}
+&lt;/script&gt;
+jsexport default {
+  emits: {
+    // No validation
+    click: null,
+
+    // Validate submit event
+    submit: ({ email, password }) =&gt; {
+      if (email &amp;&amp; password) {
+        return true
+      } else {
+        console.warn('Invalid submit event payload!')
+        return false
+      }
+    }
+  },
+  methods: {
+    submitForm(email, password) {
+      this.$emit('submit', { email, password })
+    }
+  }
+}
+Edit this page on GitHub

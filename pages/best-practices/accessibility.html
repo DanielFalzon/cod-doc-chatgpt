@@ -1,0 +1,222 @@
+Accessibility ​Web accessibility (also known as a11y) refers to the practice of creating websites that can be used by anyone — be that a person with a disability, a slow connection, outdated or broken hardware or simply someone in an unfavorable environment. For example, adding subtitles to a video would help both your deaf and hard-of-hearing users and your users who are in a loud environment and can't hear their phone. Similarly, making sure your text isn't too low contrast will help both your low-vision users and your users who are trying to use their phone in bright sunlight.Ready to start but aren’t sure where?Checkout the Planning and managing web accessibility guide provided by World Wide Web Consortium (W3C)Skip link ​You should add a link at the top of each page that goes directly to the main content area so users can skip content that is repeated on multiple Web pages.Typically this is done on the top of App.vue as it will be the first focusable element on all your pages:template&lt;ul class="skip-links"&gt;
+  &lt;li&gt;
+    &lt;a href="#main" ref="skipLink" class="skip-link"&gt;Skip to main content&lt;/a&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+To hide the link unless it is focused, you can add the following style:css.skip-link {
+  white-space: nowrap;
+  margin: 1em auto;
+  top: 0;
+  position: fixed;
+  left: 50%;
+  margin-left: -72px;
+  opacity: 0;
+}
+.skip-link:focus {
+  opacity: 1;
+  background-color: white;
+  padding: 0.5em;
+  border: 1px solid black;
+}
+Once a user changes route, bring focus back to the skip link. This can be achieved by calling focus on the skip link's template ref (assuming usage of vue-router):vue&lt;script&gt;
+export default {
+  watch: {
+    $route() {
+      this.$refs.skipLink.focus()
+    }
+  }
+}
+&lt;/script&gt;
+vue&lt;script setup&gt;
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const skipLink = ref()
+
+watch(
+  () =&gt; route.path,
+  () =&gt; {
+    skipLink.value.focus()
+  }
+)
+&lt;/script&gt;
+Read documentation on skip link to main contentContent Structure ​One of the most important pieces of accessibility is making sure that design can support accessible implementation. Design should consider not only color contrast, font selection, text sizing, and language, but also how the content is structured in the application.Headings ​Users can navigate an application through headings. Having descriptive headings for every section of your application makes it easier for users to predict the content of each section. When it comes to headings, there are a couple of recommended accessibility practices:Nest headings in their ranking order: &lt;h1&gt; - &lt;h6&gt;Don’t skip headings within a sectionUse actual heading tags instead of styling text to give the visual appearance of headingsRead more about headingstemplate&lt;main role="main" aria-labelledby="main-title"&gt;
+  &lt;h1 id="main-title"&gt;Main title&lt;/h1&gt;
+  &lt;section aria-labelledby="section-title-1"&gt;
+    &lt;h2 id="section-title-1"&gt; Section Title &lt;/h2&gt;
+    &lt;h3&gt;Section Subtitle&lt;/h3&gt;
+    &lt;!-- Content --&gt;
+  &lt;/section&gt;
+  &lt;section aria-labelledby="section-title-2"&gt;
+    &lt;h2 id="section-title-2"&gt; Section Title &lt;/h2&gt;
+    &lt;h3&gt;Section Subtitle&lt;/h3&gt;
+    &lt;!-- Content --&gt;
+    &lt;h3&gt;Section Subtitle&lt;/h3&gt;
+    &lt;!-- Content --&gt;
+  &lt;/section&gt;
+&lt;/main&gt;
+Landmarks ​Landmarks provide programmatic access to sections within an application. Users who rely on assistive technology can navigate to each section of the application and skip over content. You can use ARIA roles to help you achieve this.HTMLARIA RoleLandmark Purposeheaderrole="banner"Prime heading: title of the pagenavrole="navigation"Collection of links suitable for use when navigating the document or related documentsmainrole="main"The main or central content of the document.footerrole="contentinfo"Information about the parent document: footnotes/copyrights/links to privacy statementasiderole="complementary"Supports the main content, yet is separated and meaningful on its own contentNot availablerole="search"This section contains the search functionality for the applicationformrole="form"Collection of form-associated elementssectionrole="region"Content that is relevant and that users will likely want to navigate to. Label must be provided for this elementTip:It is recommended to use landmark HTML elements with redundant landmark role attributes in order to maximize compatibility with legacy browsers that don’t support HTML5 semantic elements.Read more about landmarksSemantic Forms ​When creating a form, you can use the following elements: &lt;form&gt;, &lt;label&gt;, &lt;input&gt;, &lt;textarea&gt;, and &lt;button&gt;Labels are typically placed on top or to the left of the form fields:template&lt;form action="/dataCollectionLocation" method="post" autocomplete="on"&gt;
+  &lt;div v-for="item in formItems" :key="item.id" class="form-item"&gt;
+    &lt;label :for="item.id"&gt;{{ item.label }}: &lt;/label&gt;
+    &lt;input
+      :type="item.type"
+      :id="item.id"
+      :name="item.id"
+      v-model="item.value"
+    /&gt;
+  &lt;/div&gt;
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+Notice how you can include autocomplete='on' on the form element and it will apply to all inputs in your form. You can also set different values for autocomplete attribute for each input.Labels ​Provide labels to describe the purpose of all form control; linking for and id:template&lt;label for="name"&gt;Name&lt;/label&gt;
+&lt;input type="text" name="name" id="name" v-model="name" /&gt;
+If you inspect this element in your chrome developer tools and open the Accessibility tab inside the Elements tab, you will see how the input gets its name from the label:Warning:Though you might have seen labels wrapping the input fields like this:template&lt;label&gt;
+  Name:
+  &lt;input type="text" name="name" id="name" v-model="name" /&gt;
+&lt;/label&gt;
+Explicitly setting the labels with a matching id is better supported by assistive technology.aria-label ​You can also give the input an accessible name with aria-label.template&lt;label for="name"&gt;Name&lt;/label&gt;
+&lt;input
+  type="text"
+  name="name"
+  id="name"
+  v-model="name"
+  :aria-label="nameLabel"
+/&gt;
+Feel free to inspect this element in Chrome DevTools to see how the accessible name has changed:aria-labelledby ​Using aria-labelledby is similar to aria-label except it is used if the label text is visible on screen. It is paired to other elements by their id and you can link multiple ids:template&lt;form
+  class="demo"
+  action="/dataCollectionLocation"
+  method="post"
+  autocomplete="on"
+&gt;
+  &lt;h1 id="billing"&gt;Billing&lt;/h1&gt;
+  &lt;div class="form-item"&gt;
+    &lt;label for="name"&gt;Name:&lt;/label&gt;
+    &lt;input
+      type="text"
+      name="name"
+      id="name"
+      v-model="name"
+      aria-labelledby="billing name"
+    /&gt;
+  &lt;/div&gt;
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+aria-describedby ​aria-describedby is used the same way as aria-labelledby except provides a description with additional information that the user might need. This can be used to describe the criteria for any input:template&lt;form
+  class="demo"
+  action="/dataCollectionLocation"
+  method="post"
+  autocomplete="on"
+&gt;
+  &lt;h1 id="billing"&gt;Billing&lt;/h1&gt;
+  &lt;div class="form-item"&gt;
+    &lt;label for="name"&gt;Full Name:&lt;/label&gt;
+    &lt;input
+      type="text"
+      name="name"
+      id="name"
+      v-model="name"
+      aria-labelledby="billing name"
+      aria-describedby="nameDescription"
+    /&gt;
+    &lt;p id="nameDescription"&gt;Please provide first and last name.&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+You can see the description by inspecting Chrome DevTools:Placeholder ​Avoid using placeholders as they can confuse many users.One of the issues with placeholders is that they don't meet the color contrast criteria by default; fixing the color contrast makes the placeholder look like pre-populated data in the input fields. Looking at the following example, you can see that the Last Name placeholder which meets the color contrast criteria looks like pre-populated data:template&lt;form
+  class="demo"
+  action="/dataCollectionLocation"
+  method="post"
+  autocomplete="on"
+&gt;
+  &lt;div v-for="item in formItems" :key="item.id" class="form-item"&gt;
+    &lt;label :for="item.id"&gt;{{ item.label }}: &lt;/label&gt;
+    &lt;input
+      type="text"
+      :id="item.id"
+      :name="item.id"
+      v-model="item.value"
+      :placeholder="item.placeholder"
+    /&gt;
+  &lt;/div&gt;
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+css/* https://www.w3schools.com/howto/howto_css_placeholder.asp */
+
+#lastName::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: black;
+  opacity: 1; /* Firefox */
+}
+
+#lastName:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: black;
+}
+
+#lastName::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: black;
+}
+It is best to provide all the information the user needs to fill out forms outside any inputs.Instructions ​When adding instructions for your input fields, make sure to link it correctly to the input. You can provide additional instructions and bind multiple ids inside an aria-labelledby. This allows for more flexible design.template&lt;fieldset&gt;
+  &lt;legend&gt;Using aria-labelledby&lt;/legend&gt;
+  &lt;label id="date-label" for="date"&gt;Current Date:&lt;/label&gt;
+  &lt;input
+    type="date"
+    name="date"
+    id="date"
+    aria-labelledby="date-label date-instructions"
+  /&gt;
+  &lt;p id="date-instructions"&gt;MM/DD/YYYY&lt;/p&gt;
+&lt;/fieldset&gt;
+Alternatively, you can attach the instructions to the input with aria-describedby:template&lt;fieldset&gt;
+  &lt;legend&gt;Using aria-describedby&lt;/legend&gt;
+  &lt;label id="dob" for="dob"&gt;Date of Birth:&lt;/label&gt;
+  &lt;input type="date" name="dob" id="dob" aria-describedby="dob-instructions" /&gt;
+  &lt;p id="dob-instructions"&gt;MM/DD/YYYY&lt;/p&gt;
+&lt;/fieldset&gt;
+Hiding Content ​Usually it is not recommended to visually hide labels, even if the input has an accessible name. However, if the functionality of the input can be understood with surrounding content, then we can hide the visual label.Let's look at this search field:template&lt;form role="search"&gt;
+  &lt;label for="search" class="hidden-visually"&gt;Search: &lt;/label&gt;
+  &lt;input type="text" name="search" id="search" v-model="search" /&gt;
+  &lt;button type="submit"&gt;Search&lt;/button&gt;
+&lt;/form&gt;
+We can do this because the search button will help visual users identify the purpose of the input field.We can use CSS to visually hide elements but keep them available for assistive technology:css.hidden-visually {
+  position: absolute;
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  height: 1px;
+  width: 1px;
+  clip: rect(0 0 0 0);
+  clip-path: inset(100%);
+}
+aria-hidden="true" ​Adding aria-hidden="true" will hide the element from assistive technology but leave it visually available for other users. Do not use it on focusable elements, purely on decorative, duplicated or offscreen content.template&lt;p&gt;This is not hidden from screen readers.&lt;/p&gt;
+&lt;p aria-hidden="true"&gt;This is hidden from screen readers.&lt;/p&gt;
+Buttons ​When using buttons inside a form, you must set the type to prevent submitting the form. You can also use an input to create buttons:template&lt;form action="/dataCollectionLocation" method="post" autocomplete="on"&gt;
+  &lt;!-- Buttons --&gt;
+  &lt;button type="button"&gt;Cancel&lt;/button&gt;
+  &lt;button type="submit"&gt;Submit&lt;/button&gt;
+
+  &lt;!-- Input buttons --&gt;
+  &lt;input type="button" value="Cancel" /&gt;
+  &lt;input type="submit" value="Submit" /&gt;
+&lt;/form&gt;
+Functional Images ​You can use this technique to create functional images.Input fieldsThese images will act as a submit type button on formstemplate&lt;form role="search"&gt;
+  &lt;label for="search" class="hidden-visually"&gt;Search: &lt;/label&gt;
+  &lt;input type="text" name="search" id="search" v-model="search" /&gt;
+  &lt;input
+    type="image"
+    class="btnImg"
+    src="https://img.icons8.com/search"
+    alt="Search"
+  /&gt;
+&lt;/form&gt;
+Iconstemplate&lt;form role="search"&gt;
+  &lt;label for="searchIcon" class="hidden-visually"&gt;Search: &lt;/label&gt;
+  &lt;input type="text" name="searchIcon" id="searchIcon" v-model="searchIcon" /&gt;
+  &lt;button type="submit"&gt;
+    &lt;i class="fas fa-search" aria-hidden="true"&gt;&lt;/i&gt;
+    &lt;span class="hidden-visually"&gt;Search&lt;/span&gt;
+  &lt;/button&gt;
+&lt;/form&gt;
+Standards ​The World Wide Web Consortium (W3C) Web Accessibility Initiative (WAI) develops web accessibility standards for the different components:User Agent Accessibility Guidelines (UAAG)web browsers and media players, including some aspects of assistive technologiesAuthoring Tool Accessibility Guidelines (ATAG)authoring toolsWeb Content Accessibility Guidelines (WCAG)web content - used by developers, authoring tools, and accessibility evaluation toolsWeb Content Accessibility Guidelines (WCAG) ​WCAG 2.1 extends on WCAG 2.0 and allows implementation of new technologies by addressing changes to the web. The W3C encourages use of the most current version of WCAG when developing or updating Web accessibility policies.WCAG 2.1 Four Main Guiding Principles (abbreviated as POUR): ​PerceivableUsers must be able to perceive the information being presentedOperableInterface forms, controls, and navigation are operableUnderstandableInformation and the operation of user interface must be understandable to all usersRobustUsers must be able to access the content as technologies advanceWeb Accessibility Initiative – Accessible Rich Internet Applications (WAI-ARIA) ​W3C's WAI-ARIA provides guidance on how to build dynamic content and advanced user interface controls.Accessible Rich Internet Applications (WAI-ARIA) 1.2WAI-ARIA Authoring Practices 1.2Resources ​Documentation ​WCAG 2.0WCAG 2.1Accessible Rich Internet Applications (WAI-ARIA) 1.2WAI-ARIA Authoring Practices 1.2Assistive Technologies ​Screen Readers NVDAVoiceOverJAWSChromeVoxZooming Tools MAGicZoomTextMagnifierTesting ​Automated Tools LighthouseWAVEARC ToolkitColor Tools WebAim Color ContrastWebAim Link Color ContrastOther Helpful Tools HeadingMapColor OracleFocus IndicatorNerdeFocusVisual AriaSilktide Website Accessibility SimulatorUsers ​The World Health Organization estimates that 15% of the world's population has some form of disability, 2-4% of them severely so. That is an estimated 1 billion people worldwide; making people with disabilities the largest minority group in the world.There are a huge range of disabilities, which can be divided roughly into four categories:Visual - These users can benefit from the use of screen readers, screen magnification, controlling screen contrast, or braille display.Auditory - These users can benefit from captioning, transcripts or sign language video.Motor - These users can benefit from a range of assistive technologies for motor impairments: voice recognition software, eye tracking, single-switch access, head wand, sip and puff switch, oversized trackball mouse, adaptive keyboard or other assistive technologies.Cognitive - These users can benefit from supplemental media, structural organization of content, clear and simple writing.Check out the following links from WebAim to understand from users:Web Accessibility Perspectives: Explore the Impact and Benefits for EveryoneStories of Web UsersEdit this page on GitHub

@@ -1,0 +1,60 @@
+Component Registration ​This page assumes you've already read the Components Basics. Read that first if you are new to components.Watch a free video lesson on Vue SchoolA Vue component needs to be "registered" so that Vue knows where to locate its implementation when it is encountered in a template. There are two ways to register components: global and local.Global Registration ​We can make components available globally in the current Vue application using the app.component() method:jsimport { createApp } from 'vue'
+
+const app = createApp({})
+
+app.component(
+  // the registered name
+  'MyComponent',
+  // the implementation
+  {
+    /* ... */
+  }
+)
+If using SFCs, you will be registering the imported .vue files:jsimport MyComponent from './App.vue'
+
+app.component('MyComponent', MyComponent)
+The app.component() method can be chained:jsapp
+  .component('ComponentA', ComponentA)
+  .component('ComponentB', ComponentB)
+  .component('ComponentC', ComponentC)
+Globally registered components can be used in the template of any component within this application:template&lt;!-- this will work in any component inside the app --&gt;
+&lt;ComponentA/&gt;
+&lt;ComponentB/&gt;
+&lt;ComponentC/&gt;
+This even applies to all subcomponents, meaning all three of these components will also be available inside each other.Local Registration ​While convenient, global registration has a few drawbacks:Global registration prevents build systems from removing unused components (a.k.a "tree-shaking"). If you globally register a component but end up not using it anywhere in your app, it will still be included in the final bundle.Global registration makes dependency relationships less explicit in large applications. It makes it difficult to locate a child component's implementation from a parent component using it. This can affect long-term maintainability similar to using too many global variables.Local registration scopes the availability of the registered components to the current component only. It makes the dependency relationship more explicit, and is more tree-shaking friendly.When using SFC with &lt;script setup&gt;, imported components can be locally used without registration:vue&lt;script setup&gt;
+import ComponentA from './ComponentA.vue'
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;ComponentA /&gt;
+&lt;/template&gt;
+In non-&lt;script setup&gt;, you will need to use the components option:jsimport ComponentA from './ComponentA.js'
+
+export default {
+  components: {
+    ComponentA
+  },
+  setup() {
+    // ...
+  }
+}
+Local registration is done using the components option:vue&lt;script&gt;
+import ComponentA from './ComponentA.vue'
+
+export default {
+  components: {
+    ComponentA
+  }
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;ComponentA /&gt;
+&lt;/template&gt;
+For each property in the components object, the key will be the registered name of the component, while the value will contain the implementation of the component. The above example is using the ES2015 property shorthand and is equivalent to:jsexport default {
+  components: {
+    ComponentA: ComponentA
+  }
+  // ...
+}
+Note that locally registered components are not also available in descendant components. In this case, ComponentA will be made available to the current component only, not any of its child or descendant components.Component Name Casing ​Throughout the guide, we are using PascalCase names when registering components. This is because:PascalCase names are valid JavaScript identifiers. This makes it easier to import and register components in JavaScript. It also helps IDEs with auto-completion.&lt;PascalCase /&gt; makes it more obvious that this is a Vue component instead of a native HTML element in templates. It also differentiates Vue components from custom elements (web components).This is the recommended style when working with SFC or string templates. However, as discussed in DOM Template Parsing Caveats, PascalCase tags are not usable in DOM templates.Luckily, Vue supports resolving kebab-case tags to components registered using PascalCase. This means a component registered as MyComponent can be referenced in the template via both &lt;MyComponent&gt; and &lt;my-component&gt;. This allows us to use the same JavaScript component registration code regardless of template source.Edit this page on GitHub
